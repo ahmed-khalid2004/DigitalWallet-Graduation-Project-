@@ -1,0 +1,13 @@
+﻿using DigitalWallet.Application.DTOs.MoneyRequest;
+using DigitalWallet.Application.Common;
+
+namespace DigitalWallet.Application.Interfaces.Services
+{
+    public interface IMoneyRequestService
+    {
+        Task<ServiceResult<MoneyRequestDto>> CreateRequestAsync(Guid fromUserId, CreateMoneyRequestDto request);
+        Task<ServiceResult<IEnumerable<MoneyRequestDto>>> GetSentRequestsAsync(Guid userId);
+        Task<ServiceResult<IEnumerable<MoneyRequestDto>>> GetReceivedRequestsAsync(Guid userId);
+        Task<ServiceResult<bool>> RespondToRequestAsync(Guid userId, AcceptRejectRequestDto request);
+    }
+}
