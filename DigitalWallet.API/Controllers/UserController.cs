@@ -1,12 +1,14 @@
-﻿using DigitalWallet.Application.Common;
-using DigitalWallet.Application.DTOs.Admin;
-using DigitalWallet.Application.DTOs.Auth;
-using DigitalWallet.Application.Interfaces.Services;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+using DigitalWallet.Application.DTOs.Admin;
+using DigitalWallet.Application.Interfaces.Services;
+using DigitalWallet.Application.Common;
 
 namespace DigitalWallet.API.Controllers
 {
+    /// <summary>
+    /// Manages user profile operations
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
@@ -22,98 +24,43 @@ namespace DigitalWallet.API.Controllers
         }
 
         /// <summary>
-        /// Returns the authenticated user's profile fetched by their JWT-embedded user ID.
+        /// Retrieves the authenticated user's profile
         /// </summary>
-        /// <returns>The current user's DTO.</returns>
-        /// <response code="200">Profile retrieved.</response>
-        /// <response code="401">Not authenticated.</response>
-        /// <response code="404">User record not found in database.</response>
-        [HttpGet("me")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        /// <returns>User profile details</returns>
+        /// <response code="200">Profile retrieved successfully</response>
+        /// <response code="401">User not authenticated</response>
+        /// <response code="404">User not found</response>
+        [HttpGet("profile")]
+        [ProducesResponseType(typeof(ApiResponse<UserManagementDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApiResponse<UserManagementDto>>> GetCurrentUser()
+        [ProducesResponseType(typeof(ApiResponse<UserManagementDto>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<UserManagementDto>>> GetProfile()
         {
             var userId = GetCurrentUserId();
             _logger.LogInformation("Fetching profile for UserId: {UserId}", userId);
 
             var result = await _userService.GetUserByIdAsync(userId);
-
-            if (!result.IsSuccess)
-                return NotFound(ApiResponse<UserManagementDto>.ErrorResponse("User profile not found."));
-
-            return Ok(ApiResponse<UserManagementDto>.SuccessResponse(result.Data!));
+            return HandleResult(result);
         }
 
         /// <summary>
-        /// Retrieves a user profile by their unique ID.
-        /// Only the owner of the account may access this endpoint; 403 is returned otherwise.
+        /// Retrieves a user by their email address
         /// </summary>
-        /// <param name="userId">Target user's GUID.</param>
-        /// <returns>The requested user's DTO.</returns>
-        /// <response code="200">Profile retrieved.</response>
-        /// <response code="400">Invalid GUID format.</response>
-        /// <response code="403">Authenticated user is not the owner.</response>
-        /// <response code="404">No user with the given ID exists.</response>
-        [HttpGet("{userId:guid}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApiResponse<UserManagementDto>>> GetUserById([FromRoute] Guid userId)
+        /// <param name="email">Email address</param>
+        /// <returns>User information</returns>
+        /// <response code="200">User found</response>
+        /// <response code="401">User not authenticated</response>
+        /// <response code="404">User not found</response>
+        [HttpGet("find-by-email/{email}")]
+        [ProducesResponseType(typeof(ApiResponse<UserManagementDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ApiResponse<UserManagementDto>), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ApiResponse<UserManagementDto>>> FindUserByEmail(string email)
         {
-            if (userId == Guid.Empty)
-                return BadRequest(ApiResponse<UserManagementDto>.ErrorResponse("A valid User ID is required."));
-
-            // Privacy guard: only allow fetching your own profile unless you are an admin.
-            var currentUserId = GetCurrentUserId();
-            if (currentUserId != userId)
-            {
-                _logger.LogWarning("UserId {CurrentId} attempted to access profile of UserId {TargetId}.",
-                    currentUserId, userId);
-                return Forbid("You are only allowed to view your own profile.");
-            }
-
-            _logger.LogInformation("Fetching profile for UserId: {UserId}", userId);
-
-            var result = await _userService.GetUserByIdAsync(userId);
-
-            if (!result.IsSuccess)
-                return NotFound(ApiResponse<UserManagementDto>.ErrorResponse("User not found."));
-
-            return Ok(ApiResponse<UserManagementDto>.SuccessResponse(result.Data!));
-        }
-
-        /// <summary>
-        /// Looks up a user by email address.
-        /// Intended for internal / admin use; regular users should use /me.
-        /// </summary>
-        /// <param name="email">Email address to search for.</param>
-        /// <returns>Matching user DTO if found.</returns>
-        /// <response code="200">User found.</response>
-        /// <response code="400">Email parameter missing or empty.</response>
-        /// <response code="404">No user with the given email.</response>
-        [HttpGet("by-email")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ApiResponse<UserManagementDto>>> GetUserByEmail([FromQuery] string email)
-        {
-            if (string.IsNullOrWhiteSpace(email))
-                return BadRequest(ApiResponse<UserManagementDto>.ErrorResponse("Email parameter is required."));
-
-            // Basic format sanity check
-            if (!email.Contains('@'))
-                return BadRequest(ApiResponse<UserManagementDto>.ErrorResponse("Invalid email format."));
-
-            _logger.LogInformation("Searching user by email: {Email}", email);
+            _logger.LogInformation("Finding user by email: {Email}", email);
 
             var result = await _userService.GetUserByEmailAsync(email);
-
-            if (!result.IsSuccess)
-                return NotFound(ApiResponse<UserManagementDto>.ErrorResponse("User with the specified email was not found."));
-
-            return Ok(ApiResponse<UserManagementDto>.SuccessResponse(result.Data!));
+            return HandleResult(result);
         }
     }
 }

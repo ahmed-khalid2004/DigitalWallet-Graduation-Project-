@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using DigitalWallet.Application.DTOs.MoneyRequest;
 using DigitalWallet.Application.Interfaces.Services;
 using DigitalWallet.Application.Common;
+using System.Linq;
 
 namespace DigitalWallet.API.Controllers
 {
@@ -56,13 +57,13 @@ namespace DigitalWallet.API.Controllers
                 _logger.LogWarning("CreateMoneyRequest failed for UserId: {UserId}. Errors: {Errors}",
                     currentUserId, string.Join(", ", result.Errors ?? Array.Empty<string>()));
                 return BadRequest(ApiResponse<MoneyRequestDto>.ErrorResponse(
-                    result.Errors ?? new List<string> { "Failed to create request" }));
+                    result.Errors?.FirstOrDefault() ?? "Failed to create request", result.Errors ?? Array.Empty<string>()));
             }
 
             return CreatedAtAction(
                 nameof(GetSentRequests),
                 null,
-                ApiResponse<MoneyRequestDto>.SuccessResponse(result.Data!, result.Message));
+                ApiResponse<MoneyRequestDto>.SuccessResponse(result.Data!, result.Message ?? "Success"));
         }
 
         /// <summary>
@@ -124,17 +125,17 @@ namespace DigitalWallet.API.Controllers
             _logger.LogInformation("RespondToRequest by UserId: {UserId}, RequestId: {RequestId}, Accept: {Accept}",
                 currentUserId, request.RequestId, request.Accept);
 
-            var result = await _moneyRequestService.RespondToRequestAsync(currentUserId, request);
+            var result = await _moneyRequestService.AcceptOrRejectRequestAsync(currentUserId, request);
 
             if (!result.IsSuccess)
             {
                 _logger.LogWarning("RespondToRequest failed for UserId: {UserId}. Errors: {Errors}",
                     currentUserId, string.Join(", ", result.Errors ?? Array.Empty<string>()));
                 return BadRequest(ApiResponse<bool>.ErrorResponse(
-                    result.Errors ?? new List<string> { "Failed to respond to request" }));
+                  result.Errors?.FirstOrDefault() ?? "Failed to respond to request", result.Errors ?? Array.Empty<string>()));
             }
 
-            return Ok(ApiResponse<bool>.SuccessResponse(result.Data, result.Message));
+            return Ok(ApiResponse<bool>.SuccessResponse(result.Data!, result.Message ?? "Success"));
         }
     }
 }

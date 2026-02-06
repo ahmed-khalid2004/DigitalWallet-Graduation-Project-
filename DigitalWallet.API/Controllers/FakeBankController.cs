@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using DigitalWallet.Application.DTOs.FakeBank;
 using DigitalWallet.Application.Interfaces.Services;
 using DigitalWallet.Application.Common;
+using System.Linq;
 
 namespace DigitalWallet.API.Controllers
 {
@@ -70,13 +71,13 @@ namespace DigitalWallet.API.Controllers
                 _logger.LogWarning("Deposit failed for UserId: {UserId}. Errors: {Errors}",
                     request.UserId, string.Join(", ", result.Errors ?? Array.Empty<string>()));
                 return BadRequest(ApiResponse<FakeBankTransactionDto>.ErrorResponse(
-                    result.Errors ?? new List<string> { "Deposit failed" }));
+                    result.Errors?.FirstOrDefault() ?? "Deposit failed", result.Errors ?? Array.Empty<string>());
             }
 
             _logger.LogInformation("Deposit succeeded for UserId: {UserId}, TxnId: {TxnId}",
                 request.UserId, result.Data?.Id);
 
-            return Ok(ApiResponse<FakeBankTransactionDto>.SuccessResponse(result.Data!, result.Message));
+            return Ok(ApiResponse<FakeBankTransactionDto>.SuccessResponse(result.Data!, result.Message ?? "Success"));
         }
 
         /// <summary>
@@ -124,13 +125,13 @@ namespace DigitalWallet.API.Controllers
                 _logger.LogWarning("Withdraw failed for UserId: {UserId}. Errors: {Errors}",
                     request.UserId, string.Join(", ", result.Errors ?? Array.Empty<string>()));
                 return BadRequest(ApiResponse<FakeBankTransactionDto>.ErrorResponse(
-                    result.Errors ?? new List<string> { "Withdrawal failed" }));
+                    result.Errors?.FirstOrDefault() ?? "Withdrawal failed", result.Errors ?? Array.Empty<string>());
             }
 
             _logger.LogInformation("Withdraw succeeded for UserId: {UserId}, TxnId: {TxnId}",
                 request.UserId, result.Data?.Id);
 
-            return Ok(ApiResponse<FakeBankTransactionDto>.SuccessResponse(result.Data!, result.Message));
+            return Ok(ApiResponse<FakeBankTransactionDto>.SuccessResponse(result.Data!, result.Message ?? "Success"));
         }
     }
 }

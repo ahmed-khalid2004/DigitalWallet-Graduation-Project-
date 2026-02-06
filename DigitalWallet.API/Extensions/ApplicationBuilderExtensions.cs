@@ -38,7 +38,7 @@ namespace DigitalWallet.API.Extensions
         }
 
         /// <summary>
-        /// Adds <see cref="JwtMiddleware"/> after logging so that:
+        /// Adds <see cref="JwtAuthenticationMiddleware"/> after logging so that:
         ///   1. The request log already has a correlation ID before auth runs.
         ///   2. If token validation throws (it shouldn't, but defensively) the exception
         ///      is caught by ExceptionHandlingMiddleware.
@@ -48,7 +48,7 @@ namespace DigitalWallet.API.Extensions
         /// </summary>
         public static WebApplication UseJwtAuthentication(this WebApplication app)
         {
-            app.UseMiddleware<JwtMiddleware>();
+            app.UseMiddleware<JwtAuthenticationMiddleware>();
             return app;
         }
 

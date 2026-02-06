@@ -40,7 +40,7 @@ namespace DigitalWallet.API.Middleware
                 : Guid.NewGuid().ToString();
 
             // Attach to response so the client can correlate errors back to server logs
-            context.Response.OnStarted(() =>
+            context.Response.OnStarting(() =>
             {
                 context.Response.Headers.Append(CorrelationIdHeader, correlationId);
                 return Task.CompletedTask;

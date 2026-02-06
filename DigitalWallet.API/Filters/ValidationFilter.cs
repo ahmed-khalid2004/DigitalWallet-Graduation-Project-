@@ -8,14 +8,14 @@ namespace DigitalWallet.API.Filters
     /// Action filter that intercepts requests with ModelState errors
     /// (populated either by the default [ApiController] model-validation or by
     /// FluentValidation's model-validation integration) and returns a uniform
-    /// 400 response shaped like <see cref="ApiResponse{T}"/>.
+    /// 400 response shaped like ApiResponse.
     ///
     /// This replaces the default ASP.NET Core error response so every validation
     /// failure across the entire API has the same JSON structure.
     ///
-    /// How to register (one-time, in Program.cs or ServiceCollectionExtensions):
+    /// How to register (one-time, in Program.cs):
     ///   builder.Services.AddControllers(options =>
-    ///       options.Filters.Add<ValidationFilter>());
+    ///       options.Filters.Add&lt;ValidationFilter&gt;());
     /// </summary>
     public class ValidationFilter : IActionFilter
     {
@@ -26,26 +26,10 @@ namespace DigitalWallet.API.Filters
             _logger = logger;
         }
 
-        /// <summary>No-op; we only need the post-binding hook.</summary>
-        public void OnActionExecuting(ActionExecutingContext context)
-        {
-            // Intentionally empty – see OnActionExecuted
-        }
-
-        /// <summary>No-op; validation is checked before the action runs.</summary>
-        public void OnActionExecuted(ActionExecutedContext context)
-        {
-            // Intentionally empty
-        }
-
         /// <summary>
-        /// Runs before the action method is invoked.  If ModelState is invalid the action
-        /// is short-circuited and a 400 <see cref="ApiResponse{object}"/> is returned.
+        /// Runs before the action method is invoked. If ModelState is invalid the action
+        /// is short-circuited and a 400 <see cref="ApiResponse"/> is returned.
         /// </summary>
-        /// <remarks>
-        /// We use the non-async overload because there is no I/O here; it is purely
-        /// in-memory inspection of the ModelState dictionary.
-        /// </remarks>
         public void OnActionExecuting(ActionExecutingContext context)
         {
             if (context.ModelState.IsValid)
@@ -73,11 +57,24 @@ namespace DigitalWallet.API.Filters
                 }
             }
 
-            _logger.LogWarning("Validation failed. Errors: [{Errors}]", string.Join("; ", errors));
+            // ── Log validation failure ────────────────────────────────────────
+            _logger.LogWarning(
+                "Model validation failed for {Path}. Errors: {Errors}",
+                context.HttpContext.Request.Path,
+                string.Join("; ", errors));
 
-            // ── Short-circuit: set the result and stop the pipeline ───────────
-            context.Result = new BadRequestObjectResult(
-                ApiResponse<object>.ErrorResponse(errors));
+            // ── Short-circuit with a 400 response ────────────────────────────
+            var response = ApiResponse<object>.ErrorResponse(
+    "Validation failed",
+    errors
+);
+            context.Result = new BadRequestObjectResult(response);
+        }
+
+        /// <summary>No-op; validation is checked before the action runs.</summary>
+        public void OnActionExecuted(ActionExecutedContext context)
+        {
+            // Intentionally empty
         }
     }
 }

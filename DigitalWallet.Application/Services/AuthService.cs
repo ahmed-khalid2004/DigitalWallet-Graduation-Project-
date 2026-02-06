@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-using System;
-using AutoMapper;
+﻿using AutoMapper;
 using DigitalWallet.Application.Common;
 using DigitalWallet.Application.DTOs.Auth;
 using DigitalWallet.Application.Interfaces.Repositories;
@@ -8,7 +6,6 @@ using DigitalWallet.Application.Interfaces.Services;
 using DigitalWallet.Domain.Entities;
 using DigitalWallet.Domain.Enums;
 using DigitalWallet.Application.Helpers;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DigitalWallet.Application.Services
 {

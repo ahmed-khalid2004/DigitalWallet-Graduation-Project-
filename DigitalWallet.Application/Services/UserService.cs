@@ -41,23 +41,6 @@ namespace DigitalWallet.Application.Services
             {
                 var user = await _unitOfWork.Users.GetByEmailAsync(email);
                 if (user == null)
-                    return ServiceResult<UserDto>.Failure("User not found");
-
-                var userDto = _mapper.Map<UserDto>(user);
-                return ServiceResult<UserDto>.Success(userDto);
-            }
-            catch (Exception ex)
-            {
-                return ServiceResult<UserDto>.Failure($"Error retrieving user: {ex.Message}");
-            }
-        }
-
-        public async Task<ServiceResult<UserDto>> GetUserByPhoneAsync(string phone)
-        {
-            try
-            {
-                var user = await _unitOfWork.Users.GetByPhoneNumberAsync(phone);
-                if (user == null)
                     return ServiceResult<UserManagementDto>.Failure("User not found");
 
                 var userDto = _mapper.Map<UserManagementDto>(user);
@@ -66,6 +49,25 @@ namespace DigitalWallet.Application.Services
             catch (Exception ex)
             {
                 return ServiceResult<UserManagementDto>.Failure($"Error retrieving user: {ex.Message}");
+            }
+        }
+
+        // Note: GetUserByPhoneAsync is not defined in IUserService interface
+        // If you need this method, add it to the interface first
+        public async Task<ServiceResult<UserDto>> GetUserByPhoneAsync(string phone)
+        {
+            try
+            {
+                var user = await _unitOfWork.Users.GetByPhoneNumberAsync(phone);
+                if (user == null)
+                    return ServiceResult<UserDto>.Failure("User not found");
+
+                var userDto = _mapper.Map<UserDto>(user);
+                return ServiceResult<UserDto>.Success(userDto);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult<UserDto>.Failure($"Error retrieving user: {ex.Message}");
             }
         }
     }

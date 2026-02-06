@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using DigitalWallet.Application.DTOs.BillPayment;
 using DigitalWallet.Application.Interfaces.Services;
 using DigitalWallet.Application.Common;
+using System.Linq;
 
 namespace DigitalWallet.API.Controllers
 {
@@ -98,13 +99,13 @@ namespace DigitalWallet.API.Controllers
                 _logger.LogWarning("PayBill failed for UserId: {UserId}. Errors: {Errors}",
                     currentUserId, string.Join(", ", result.Errors ?? Array.Empty<string>()));
                 return BadRequest(ApiResponse<BillPaymentDto>.ErrorResponse(
-                    result.Errors ?? new List<string> { "Bill payment failed" }));
+                    result.Errors?.FirstOrDefault() ?? "Bill payment failed", result.Errors ?? Array.Empty<string>()));
             }
 
             _logger.LogInformation("PayBill succeeded for UserId: {UserId}, PaymentId: {PaymentId}",
                 currentUserId, result.Data?.Id);
 
-            return Ok(ApiResponse<BillPaymentDto>.SuccessResponse(result.Data!, result.Message));
+            return Ok(ApiResponse<BillPaymentDto>.SuccessResponse(result.Data!, result.Message ?? "Success"));
         }
 
         /// <summary>
@@ -114,12 +115,12 @@ namespace DigitalWallet.API.Controllers
         /// <response code="200">Payment history retrieved (may be empty).</response>
         [HttpGet("my-payments")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<ApiResponse<IEnumerable<BillPaymentDto>>>> GetMyPayments()
+        public async Task<ActionResult<ApiResponse<PaginatedResult<BillPaymentDto>>>> GetMyPayments()
         {
             var currentUserId = GetCurrentUserId();
             _logger.LogInformation("Fetching bill payments for UserId: {UserId}", currentUserId);
 
-            var result = await _billPaymentService.GetUserBillPaymentsAsync(currentUserId);
+            var result = await _billPaymentService.GetPaymentHistoryAsync(currentUserId, 1, 100);
             return HandleResult(result);
         }
     }

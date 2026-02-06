@@ -1,8 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Swashbuckle.AspNetCore.Swagger;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using Swashbuckle.AspNetCore.SwaggerUI;
+﻿using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 
 namespace DigitalWallet.API.Extensions
@@ -80,7 +76,7 @@ namespace DigitalWallet.API.Extensions
                 //     options.IncludeXmlComments(xmlFile);
 
                 // ── Avoid "duplicate schema" errors when two DTOs share a name ─
-                options.UseFullyQualifiedSchemaNames();
+                options.CustomSchemaIds(type => type.FullName);  
             });
 
             return services;
@@ -93,26 +89,19 @@ namespace DigitalWallet.API.Extensions
         /// </summary>
         public static WebApplication UseSwaggerDocumentation(this WebApplication app)
         {
-            app.UseSwagger(options =>
-            {
-                // Serve the spec at /swagger/v1/swagger.json (default)
-                options.RoutePrefix = "swagger";
-            });
+            app.UseSwagger();
 
             app.UseSwaggerUI(options =>
             {
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "DigitalWallet API v1");
-                options.RoutePrefix = "swagger"; // UI available at /swagger
+                options.RoutePrefix = "swagger"; // UI at /swagger
                 options.DocumentTitle = "DigitalWallet – Swagger UI";
 
-                // Persist authorisation across page refreshes (token stays in the textbox)
-                options.ConfigObject.AdditionalInterceptors = new Dictionary<string, object>
-                {
-                    ["persistAuthorization"] = true
-                };
+                options.EnablePersistAuthorization();
             });
 
             return app;
         }
+
     }
 }
